@@ -121,44 +121,32 @@ def process_video_and_analyze(video_path, context_goal, lang_name):
 from bidi.algorithm import get_display
 
 def create_pdf(analysis_text, score, ctx):
+    # שימוש ב-fpdf2
+    from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
 
-    # הגדרת שוליים ברורה למניעת שגיאות חישוב
-    pdf.set_left_margin(10)
-    pdf.set_right_margin(10)
-
-    # חישוב רוחב הדף הזמין (רוחב דף פחות שוליים)
-    effective_page_width = pdf.w - 20
-
+    # טעינת פונט שתומך בעברית (חייב להיות בתיקייה שלך ב-GitHub)
     font_path = "Assistant-Regular.ttf"
     if os.path.exists(font_path):
         pdf.add_font("Assistant", "", font_path)
         pdf.set_font("Assistant", "", 12)
     else:
-        pdf.set_font('Arial', 'B', 14)
+        pdf.set_font("Arial", size=12)
 
-    # כותרת
+    # הפיכת הטקסט לעברית ויזואלית (מימין לשמאל)
+    from bidi.algorithm import get_display
+
     title = get_display("דו\"ח ניתוח Rhetor-AI-ca Pro")
-    pdf.cell(effective_page_width, 10, title, 0, 1, 'C')
-    pdf.ln(10)
+    pdf.cell(0, 10, txt=title, ln=1, align='C')
 
-    # הכנת הטקסט - שימוש ב-get_display
-    # הוספת "נקיון" לטקסט למניעת תווים בלתי נראים שגורמים לשגיאה
-    clean_text = analysis_text.replace('\n', ' ').strip()
+    # ניקוי תווים בעייתיים לפני הכתיבה
+    clean_analysis = analysis_text.encode('utf-8', 'ignore').decode('utf-8')
+    display_text = get_display(clean_analysis)
 
-    display_score = get_display(f"ציון: {score}/100")
-    display_context = get_display(f"הקשר: {ctx}")
-    display_analysis = get_display(clean_text)
+    pdf.multi_cell(0, 10, txt=display_text, align='R')
 
-    # כתיבה ל-PDF עם רוחב מוגדר מראש (במקום 0)
-    pdf.multi_cell(effective_page_width, 10, txt=display_score, align='R')
-    pdf.multi_cell(effective_page_width, 10, txt=display_context, align='R')
-    pdf.ln(5)
-
-    # כאן מתבצע התיקון הקריטי: רוחב קבוע למניעת שגיאת ה-Space
-    pdf.multi_cell(effective_page_width, 10, txt=display_analysis, align='R')
-
+    # החזרה של ה-PDF כבייטים
     return pdf.output()
 # ==========================================
 # 4. ממשק המשתמש (UI)

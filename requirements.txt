@@ -3,5 +3,5 @@ opencv-python-headless
 mediapipe
 google-generativeai
 Pillow
-fpdf
+fpdf2
 python-bidi
