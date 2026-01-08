@@ -8,7 +8,33 @@ from PIL import Image
 import re
 from datetime import datetime
 from fpdf import FPDF
-
+# הגדרות עיצוב לפי קבוצת גיל
+THEMES = {
+    "ילדים (ד-ח)": {
+        "primary": "#FFB800",  # צהוב-כתום חם
+        "secondary": "#4CAF50", # ירוק ידידותי
+        "bg_card": "#FFF9C4",   # רקע בהיר ונעים
+        "text": "#333333",
+        "font_size": "1.2em",
+        "title_gradient": "linear-gradient(to right, #FFB800, #FF5722)"
+    },
+    "נוער (ט-יב)": {
+        "primary": "#3b82f6",  # כחול טכנולוגי
+        "secondary": "#10b981", # ירוק הייטק
+        "bg_card": "#1f2937",   # כהה ומקצועי
+        "text": "#ffffff",
+        "font_size": "1.1em",
+        "title_gradient": "linear-gradient(to right, #3b82f6, #10b981)"
+    },
+    "מורים": {
+        "primary": "#8b5cf6",  # סגול פדגוגי/אקדמי
+        "secondary": "#ec4899", # ורוד כהה
+        "bg_card": "#f3f4f6",   # אפור בהיר נקי (דמוי דאשבורד)
+        "text": "#1f2937",
+        "font_size": "1.1em",
+        "title_gradient": "linear-gradient(to right, #8b5cf6, #ec4899)"
+    }
+}
 # ==========================================
 # 1. הגדרות שפה ותרגומים
 # ==========================================
