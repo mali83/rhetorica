@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhetorica AI - ממשק מנהיגות תקשורתית</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Assistant', 'Inter', sans-serif; }
+        .hologram-filter { filter: contrast(2) saturate(3) hue-rotate(90deg) brightness(1.2) blur(0.5px); mix-blend-mode: screen; }
+        @media print {
+            .no-print { display: none !important; }
+            #pdfReportTemplate { display: block !important; }
+            body { background: white !important; color: #1a2049 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        @media screen { #pdfReportTemplate { display: none; } }
+    </style>
+</head>
+<body class="bg-[#1a2049] text-white min-h-screen flex flex-col justify-between">
+
+    <div class="no-print flex flex-col min-h-screen justify-between flex-grow">
+
+        <!-- Header -->
+        <header class="p-6 bg-[#131735] flex justify-between items-center border-b border-gray-800 shadow-md">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-[#00bfff] rounded-full flex items-center justify-center font-bold text-xl text-[#1a2049] shadow-lg shadow-[#00bfff]/30">R</div>
+                <h1 class="text-2xl font-bold tracking-wide">Rhetorica <span class="text-[#00bfff]">AI</span></h1>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- בורר שפות -->
+                <div class="inline-flex rounded-xl bg-gray-800 p-1 border border-gray-700 text-xs">
+                    <button type="button" onclick="setLanguage('he')" id="lang-he-btn" class="px-3 py-1 rounded-lg font-bold bg-[#00bfff] text-[#1a2049] transition shadow cursor-pointer">🇮🇱 עברית</button>
+                    <button type="button" onclick="setLanguage('en')" id="lang-en-btn" class="px-3 py-1 rounded-lg font-medium text-gray-400 hover:text-white transition cursor-pointer">🇺🇸 English</button>
+                </div>
+
+                <div class="hidden sm:flex items-center gap-2 text-xs bg-gray-800/80 px-3 py-1.5 rounded-full border border-gray-700">
+                    <span class="w-2 h-2 rounded-full bg-green-400 animate-ping"></span>
+                    <span id="ui-engine-status">מנוע AI מחובר</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8 max-w-4xl flex-grow">
+
+            <!-- Controls -->
+            <div class="mb-8 bg-[#1f2657] p-6 rounded-2xl border border-gray-800 shadow-xl space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-700/60 pb-4">
+                    <div>
+                        <h3 id="ui-audience-title" class="text-base font-semibold text-gray-200">קהל יעד לכיול אבחון המומחה:</h3>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="ui-gender-label" class="text-xs text-gray-400">פנייה בדוח:</span>
+                        <div class="inline-flex rounded-xl bg-[#131735] p-1 border border-gray-700">
+                            <button type="button" onclick="selectGender('male')" id="gender-male-btn" class="px-3 py-1 rounded-lg text-xs font-bold bg-[#00bfff] text-[#1a2049] transition shadow cursor-pointer"> מרצה (זכר)</button>
+                            <button type="button" onclick="selectGender('female')" id="gender-female-btn" class="px-3 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition cursor-pointer"> מרצה (נקבה)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <button type="button" onclick="selectAudience(this)" class="audience-btn p-3 rounded-xl border border-gray-700 bg-[#131735] hover:border-[#8a2be2] transition font-medium focus:outline-none cursor-pointer" data-key="aud-elem">כיתות ד'-ו'</button>
+                    <button type="button" onclick="selectAudience(this)" class="audience-btn p-3 rounded-xl border border-gray-700 bg-[#131735] hover:border-[#8a2be2] transition font-medium focus:outline-none cursor-pointer" data-key="aud-middle">כיתות ז'-ט'</button>
+                    <button type="button" onclick="selectAudience(this)" class="audience-btn p-3 rounded-xl border border-gray-700 bg-[#131735] hover:border-[#8a2be2] transition font-medium focus:outline-none cursor-pointer" data-key="aud-high">כיתות י'-י"ב</button>
+                    <button type="button" onclick="selectAudience(this)" class="audience-btn p-3 rounded-xl border border-[#8a2be2] bg-[#8a2be2]/20 shadow-lg shadow-[#8a2be2]/20 transition font-medium focus:outline-none cursor-pointer" id="default-audience" data-key="aud-adults">בוגרים ומורים</button>
+                </div>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="bg-white text-gray-800 rounded-3xl shadow-2xl border border-gray-100 overflow-hidden mb-8">
+                <div class="flex border-b border-gray-200 bg-gray-50 text-xs sm:text-sm">
+                    <button type="button" onclick="switchTab('upload')" id="tab-upload-btn" class="flex-1 py-4 text-center font-bold border-b-4 border-[#8a2be2] text-[#8a2be2] transition cursor-pointer"> העלאת שיעור</button>
+                    <button type="button" onclick="switchTab('record')" id="tab-record-btn" class="flex-1 py-4 text-center font-bold text-gray-500 hover:text-gray-700 transition cursor-pointer"> תצפית חיה</button>
+                    <button type="button" onclick="switchTab('pdf')" id="tab-pdf-btn" class="flex-1 py-4 text-center font-bold text-gray-500 hover:text-gray-700 transition cursor-pointer"> הפקת דוח</button>
+                    <button type="button" onclick="switchTab('compare')" id="tab-compare-btn" class="flex-1 py-4 text-center font-bold text-gray-500 hover:text-gray-700 transition cursor-pointer"> מעקב התקדמות</button>
+                </div>
+
+                <div class="p-8">
+                    <!-- Upload Tab -->
+                    <div id="tab-upload" class="tab-content block text-center">
+                        <div id="dropZone"
+                             ondragover="handleDragOver(event)"
+                             ondragleave="handleDragLeave(event)"
+                             ondrop="handleDrop(event)"
+                             onclick="document.getElementById('fileInput').click()"
+                             class="border-2 border-dashed border-gray-300 rounded-2xl p-8 hover:border-[#00bfff] transition-all cursor-pointer bg-gray-50 group">
+
+                            <div id="dropZonePrompt">
+                                <span class="text-5xl mb-3 block group-hover:scale-110 transition duration-200">🎬</span>
+                                <p id="ui-drop-title" class="text-lg font-bold text-gray-700">גרור/י והשלך/י קובץ שיעור לכאן, או לחץ/י לבחירה</p>
+                                <p id="ui-drop-sub" class="text-xs text-gray-400 mt-1.5">תומך בכל פורמטי הווידאו והשמע (MP4, MP3, WAV, MOV, WebM)</p>
+                            </div>
+
+                            <div id="fileSelectedCard" class="hidden flex items-center justify-between bg-blue-50 border border-blue-200 p-4 rounded-xl text-right">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-3xl">📹</span>
+                                    <div>
+                                        <h5 id="selectedFileName" class="font-bold text-[#1a2049] text-base truncate max-w-xs md:max-w-md">שם הקובץ</h5>
+                                        <p id="selectedFileSize" class="text-xs text-gray-500">גודל קובץ</p>
+                                    </div>
+                                </div>
+                                <span id="ui-replace-file" class="text-xs text-[#00bfff] font-bold underline hover:text-blue-700">החלף קובץ</span>
+                            </div>
+
+                            <input type="file" id="fileInput" accept="video/*,audio/*,.mp3,.wav,.mp4,.mov,.m4a,.webm" class="hidden" onchange="handleFileSelect(event)">
+                        </div>
+
+                        <button type="button" id="ui-btn-analyze" onclick="uploadAndAnalyze()" class="mt-6 w-full md:w-auto px-10 py-4 bg-[#00bfff] text-white font-bold text-lg rounded-xl shadow-lg shadow-[#00bfff]/30 hover:bg-[#0099cc] hover:scale-[1.02] transition active:scale-[0.98] cursor-pointer">הפעל ניתוח מומחה שפת גוף ורטוריקה </button>
+                    </div>
+
+                    <!-- Record Tab -->
+                    <div id="tab-record" class="tab-content hidden flex flex-col items-center justify-center py-6 space-y-4">
+                        <div class="relative w-full max-w-lg aspect-video bg-gray-900 rounded-2xl overflow-hidden shadow-inner flex items-center justify-center border-2 border-gray-700">
+                            <video id="livePreview" autoplay playsinline muted class="w-full h-full object-cover hidden"></video>
+                            <div id="cameraPlaceholder" class="text-center text-gray-400 p-4">
+                                <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">🎙️</div>
+                                <p id="ui-rec-title" class="font-bold text-gray-200 text-base">סימולציית תצפית חיה (מצלמה + מיקרופון)</p>
+                                <p id="ui-rec-sub" class="text-xs text-gray-400 mt-1">הווידאו יוקלט באיכות מותאמת וישלח ישירות לניתוח AI</p>
+                            </div>
+                            <div id="recordingBadge" class="absolute top-4 right-4 flex items-center gap-2 bg-red-600/90 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse hidden">
+                                <span class="w-2 h-2 bg-white rounded-full"></span>
+                                <span>REC: <span id="recordTimer">00:00</span></span>
+                            </div>
+                        </div>
+
+                        <button type="button" id="btnRecordToggle" onclick="toggleLiveRecording()" class="px-8 py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition flex items-center gap-2 shadow-lg shadow-red-500/30 cursor-pointer">
+                            <span>🔴 התחל תצפית והקלטה</span>
+                        </button>
+                    </div>
+
+                    <!-- PDF & Email Tab -->
+                    <div id="tab-pdf" class="tab-content hidden text-center py-6 space-y-6">
+                        <div>
+                            <span class="text-5xl block mb-2">📄</span>
+                            <p id="ui-pdf-title" class="text-lg font-semibold text-gray-700">ייצוא ושמירת דוח תצפית מומחה</p>
+                            <p id="ui-pdf-sub" class="text-xs text-gray-400 mt-1">שמרי את הדוח במחשב או שלחי אותו ישירות למייל האישי כקובץ PDF</p>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-lg mx-auto">
+                            <button type="button" id="ui-pdf-btn" onclick="generatePDFReport()" class="w-full sm:w-auto px-6 py-3.5 bg-[#1a2049] text-white font-bold rounded-xl hover:bg-[#131735] transition shadow-lg cursor-pointer">
+                                הורד כ-PDF 💾
+                            </button>
+                        </div>
+
+                        <!-- כרטיס שליחה ישירה למייל -->
+                        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-5 max-w-md mx-auto text-right">
+                            <label id="ui-email-label" class="block text-xs font-bold text-gray-700 mb-2">📧 שלח את הדוח ישירות למייל (קובץ PDF מצורף):</label>
+                            <div class="flex gap-2">
+                                <input type="email" id="targetEmailInput" placeholder="teacher@school.org.il" class="flex-grow px-3 py-2 text-sm bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:border-[#00bfff]">
+                                <button type="button" id="btnSendEmail" onclick="sendReportToEmail()" class="px-5 py-2 bg-[#00bfff] hover:bg-[#0099cc] text-white text-xs font-bold rounded-xl shadow transition cursor-pointer">
+                                    שלח דוח ✉️
+                                </button>
+                            </div>
+                            <p id="emailStatusMsg" class="text-xs mt-2 hidden"></p>
+                        </div>
+                    </div>
+
+                    <!-- Compare Progress Tab -->
+                    <div id="tab-compare" class="tab-content hidden text-center py-6 space-y-6">
+                        <div>
+                            <span class="text-5xl block mb-2">📈</span>
+                            <h4 id="ui-cmp-heading" class="text-lg font-bold text-gray-800">מעקב התקדמות והצלבת דוחות עבר</h4>
+                            <p id="ui-cmp-sub" class="text-xs text-gray-500 mt-1">העלי דוח PDF ישן שהופק ברטוריקה לצורך מדידת שיפור וזיהוי שינויים</p>
+                        </div>
+
+                        <div class="max-w-md mx-auto p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl">
+                            <input type="file" id="pastPdfInput" accept=".pdf" class="hidden" onchange="handlePastPdfSelect(event)">
+                            <button type="button" id="ui-btn-choose-pdf" onclick="document.getElementById('pastPdfInput').click()" class="px-6 py-3 bg-[#8a2be2] hover:bg-[#7b23cf] text-white text-xs font-bold rounded-xl shadow transition cursor-pointer">
+                                📁 בחרי דוח PDF קודם להשוואה
+                            </button>
+                            <p id="selectedPastPdfName" class="text-xs text-gray-500 mt-2 font-mono">לא נבחר קובץ</p>
+                        </div>
+
+                        <button type="button" id="btnRunCompare" onclick="compareWithPastReport()" class="px-8 py-3.5 bg-[#00bfff] hover:bg-[#0099cc] text-white font-bold rounded-xl shadow-lg transition cursor-pointer">
+                            בצע השוואת שיפור 🔍
+                        </button>
+
+                        <!-- תוצאות השוואה -->
+                        <div id="compareResultsCard" class="hidden text-right bg-[#1f2657] p-6 rounded-2xl border border-gray-800 text-white space-y-4 max-w-2xl mx-auto shadow-xl">
+                            <div class="flex items-center justify-between border-b border-gray-700 pb-3">
+                                <h5 class="text-base font-bold text-[#00bfff]" id="cmpStatus">--</h5>
+                                <span class="text-sm font-bold bg-green-500/20 text-green-300 px-3 py-1 rounded-full" id="cmpDelta">--</span>
+                            </div>
+
+                            <p class="text-xs text-gray-300 leading-relaxed" id="cmpSummary">--</p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <div class="bg-[#131735] p-4 rounded-xl border border-green-500/30">
+                                    <h6 id="ui-cmp-res-title" class="text-xs font-bold text-green-400 mb-2 flex items-center gap-1"><span></span> יעדים שנכבשו ותוקנו:</h6>
+                                    <div id="cmpResolvedList" class="text-xs text-gray-300 space-y-2"></div>
+                                </div>
+                                <div class="bg-[#131735] p-4 rounded-xl border border-orange-500/30">
+                                    <h6 id="ui-cmp-per-title" class="text-xs font-bold text-orange-400 mb-2 flex items-center gap-1"><span></span> פערי ליבה שדורשים שיפור:</h6>
+                                    <div id="cmpPersistentList" class="text-xs text-gray-300 space-y-2"></div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-purple-900/60 to-[#131735] p-4 rounded-xl border border-purple-500/40 text-xs">
+                                <strong id="ui-cmp-tip-title" class="text-[#00bfff]">💡 דגש פדגוגי להמשך:</strong>
+                                <p id="cmpCoachingTip" class="mt-1 text-gray-200"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loader -->
+            <div id="loader" class="hidden text-center py-8">
+                <div class="animate-spin inline-block w-10 h-10 border-4 border-[#00bfff] border-t-transparent rounded-full mb-3"></div>
+                <p id="loader-title" class="text-[#00bfff] font-bold text-lg">Rhetorica AI מעבד ומנתח את הווידאו כעת...</p>
+                <p id="loader-sub" class="text-xs text-gray-400 mt-1">מודל ה-AI צופה בווידאו, מתמלל את השמע ומנתח שפת גוף וקצב דיבור</p>
+            </div>
+
+            <!-- Dashboard Results -->
+            <div id="dashboard" class="hidden space-y-6">
+
+                <!-- Golden Tip -->
+                <div class="bg-gradient-to-r from-[#ff5733] to-[#ff7a5c] p-6 rounded-2xl shadow-xl border border-[#ff5733] flex items-start gap-4">
+                    <span class="text-3xl">💡</span>
+                    <div>
+                        <h4 id="ui-gold-title" class="text-xl font-bold mb-1 text-white">תובנת המומחה המרכזית (טיפ הזהב לשיעור):</h4>
+                        <p id="golden-tip-text" class="text-white text-lg opacity-95">>> טוען נתונים...</p>
+                    </div>
+                </div>
+
+                <!-- Primary Metrics & Avatar -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-[#1f2657] p-6 rounded-2xl border border-gray-800 flex flex-col items-center justify-center text-center">
+                        <div class="w-32 h-32 bg-gradient-to-b from-[#8a2be2]/30 to-transparent rounded-full flex items-center justify-center mb-3 border border-[#8a2be2]/50 relative overflow-hidden">
+                            <span id="avatar-icon" class="text-6xl opacity-80 block">👤</span>
+                            <video id="avatar-webcam" autoplay muted playsinline class="hidden w-full h-full object-cover hologram-filter rounded-full"></video>
+                            <div id="avatar-scanner" class="absolute inset-0 rounded-full border-2 border-dashed border-[#00bfff] animate-spin [animation-duration:10s] pointer-events-none"></div>
+                        </div>
+                        <h5 id="avatar-status-title" class="font-bold text-lg text-[#00bfff]">אווטאר סורק שפת גוף</h5>
+                        <p id="avatar-status-desc" class="text-xs text-gray-400 mt-1 mb-4">מזהה יציבה ומבודד מבוכה ויזואלית</p>
+
+                        <button type="button" onclick="toggleAvatarMode()" id="avatar-toggle-btn" class="px-4 py-2 rounded-xl text-xs font-bold bg-[#8a2be2] text-white hover:bg-[#7b23cf] transition shadow-md focus:outline-none cursor-pointer">
+                            📴 כיבוי מצב אווטאר
+                        </button>
+                    </div>
+
+                    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-white text-gray-800 p-5 rounded-2xl shadow-md border border-gray-100">
+                            <span id="ui-pres-title" class="text-gray-400 text-sm block mb-1">מדד נוכחות וחיבור פדגוגי</span>
+                            <div class="text-3xl font-bold text-[#1a2049]" id="stat-presence">-- <span class="text-xs font-normal text-green-600 bg-green-50 px-2 py-0.5 rounded-full mr-1" id="stat-presence-tag">תקין</span></div>
+                            <div class="w-full bg-gray-200 h-2 rounded-full mt-3 overflow-hidden">
+                                <div id="stat-presence-bar" class="bg-green-500 h-full" style="width: 85%"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white text-gray-800 p-5 rounded-2xl shadow-md border border-gray-100">
+                            <span id="ui-wpm-title" class="text-gray-400 text-sm block mb-1">קצב דיבור ממוצע (WPM)</span>
+                            <div class="text-3xl font-bold text-[#00bfff]" id="stat-wpm">-- <span id="ui-wpm-unit" class="text-sm font-normal text-gray-500">מילים לדקה</span></div>
+                            <div class="w-full bg-gray-200 h-2 rounded-full mt-3 overflow-hidden">
+                                <div id="stat-wpm-bar" class="bg-[#00bfff] h-full" style="width: 70%"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white text-gray-800 p-5 rounded-2xl shadow-md border border-gray-100 sm:col-span-2 flex flex-col justify-between">
+                            <div>
+                                <span id="ui-pitch-title" class="text-gray-400 text-sm block mb-0.5">דינמיקת קול וגיוון טון על פני מהלך השיעור</span>
+                                <div id="ui-pitch-sub" class="text-[11px] text-gray-400 mb-2">מדידת שינויי תדר הקול (Hz) לאורך שלבי השיעור</div>
+                            </div>
+
+                            <div class="flex items-stretch h-24 mt-2 relative">
+                                <div id="ui-pitch-legend" class="flex flex-col justify-between text-[10px] text-gray-400 border-l border-gray-200 pl-2 select-none text-left w-24">
+                                    <span>גבוה (הדגשה)</span>
+                                    <span class="text-gray-300 border-t border-dashed border-gray-200 pt-1">טון ממוצע</span>
+                                    <span>נמוך (סמכות)</span>
+                                </div>
+
+                                <div id="pitch-bars-container" class="flex-grow flex items-end gap-3 px-3 relative h-full">
+                                    <div class="absolute left-0 right-0 top-1/2 border-t border-dashed border-gray-200 pointer-events-none z-0"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strengths -->
+                <div class="bg-[#1f2657] p-6 rounded-3xl border border-gray-800 shadow-xl space-y-4">
+                    <div class="flex justify-between items-center border-b border-gray-700/80 pb-3">
+                        <h4 class="text-lg font-bold text-white flex items-center gap-2">
+                            <span>✅</span>
+                            <span id="strengths-title">נקודות חוזק מרכזיות שנצפו</span>
+                        </h4>
+                        <span id="ui-str-badge" class="text-xs bg-green-500/20 text-green-300 px-3 py-1 rounded-full border border-green-500/30 font-semibold">ביצוע מצטיין</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2" id="strengths-container"></div>
+                </div>
+
+                <!-- Gaps -->
+                <div class="bg-[#241a3e] p-6 rounded-3xl border border-purple-900/60 shadow-xl space-y-4">
+                    <div class="flex justify-between items-center border-b border-purple-800/50 pb-3">
+                        <div>
+                            <h4 class="text-lg font-bold text-white flex items-center gap-2">
+                                <span>🎯</span>
+                                <span id="gaps-title">פערי ביצוע: נקודות לשיפור</span>
+                            </h4>
+                            <p id="ui-gaps-sub" class="text-xs text-gray-300 mt-0.5">ניתוח נקודות התורפה שנצפו בשיעור זה והמלצות לפעולה</p>
+                        </div>
+                        <span id="gap-badge" class="text-xs bg-red-500/20 text-red-300 px-3 py-1 rounded-full border border-red-500/30 font-bold">פערי ציון</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2" id="gaps-container"></div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="bg-white text-gray-800 p-6 rounded-3xl shadow-md border border-gray-100 space-y-3">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h4 class="font-bold text-base text-[#1a2049] flex items-center gap-2">
+                            <span>⏱️</span>
+                            <span id="ui-timeline-title">יומן תצפית רטורי לאורך מהלך השיעור</span>
+                        </h4>
+                        <span id="log-duration-tag" class="text-xs bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded font-mono font-bold">אורך שיעור</span>
+                    </div>
+                    <div class="space-y-2.5 text-xs text-gray-600" id="timeline-container"></div>
+                </div>
+
+            </div>
+        </main>
+
+        <footer class="p-4 text-center text-xs text-gray-500 bg-[#131735] border-t border-gray-800">
+            Rhetorica AI • Communication & Pedagogical Leadership Engine
+        </footer>
+    </div>
+
+    <!-- PDF Printable Structure -->
+    <div id="pdfReportTemplate" class="p-10 max-w-4xl mx-auto bg-white text-[#1a2049]">
+        <div class="border-b-4 border-[#1a2049] pb-6 mb-8 flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-bold text-[#1a2049]">Rhetorica <span class="text-[#00bfff]">AI</span></h1>
+                <p id="pdf-header-sub" class="text-xs text-gray-500 mt-1">דוח מומחה שפת גוף, נוכחות פדגוגית ומנהיגות רטורית</p>
+            </div>
+            <div class="text-left font-mono text-xs text-gray-500">
+                <p id="pdf-report-type" class="font-sans font-bold text-[#1a2049] text-sm">Official Classroom Observation Report</p>
+                <p id="pdfDate">תאריך: --</p>
+                <p class="text-[10px] text-gray-400" id="pdfDuration">משך: --</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-100 text-xs">
+            <div>
+                <span id="pdf-aud-lbl" class="text-gray-400 block mb-0.5">קהל יעד נבחן:</span>
+                <span class="text-sm font-bold text-[#1a2049]" id="pdfAudience">--</span>
+            </div>
+            <div>
+                <span id="pdf-spk-lbl" class="text-gray-400 block mb-0.5">מרצה מאובחן/ת:</span>
+                <span class="text-sm font-bold text-[#1a2049]" id="pdfSpeakerType">--</span>
+            </div>
+            <div>
+                <span id="pdf-evl-lbl" class="text-gray-400 block mb-0.5">מאבחן/ת מוסמך/ת:</span>
+                <span class="text-sm font-bold text-[#00bfff]">Rhetorica AI</span>
+            </div>
+            <div>
+                <span id="pdf-scr-lbl" class="text-gray-400 block mb-0.5">ציון נוכחות כולל:</span>
+                <span class="text-sm font-bold text-green-600" id="pdfScore">-- / 100</span>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-[#ff5733] to-[#ff7a5c] p-5 rounded-2xl shadow-md text-white mb-6">
+            <h3 class="text-base font-bold mb-1 flex items-center gap-2">
+                <span>💡</span>
+                <span id="pdf-tip-title">תובנת המומחה המרכזית (טיפ הזהב לשיעור)</span>
+            </h3>
+            <p class="text-sm leading-relaxed opacity-95 font-medium" id="pdfGoldenTip">>> טיפ יופיע כאן</p>
+        </div>
+
+        <h3 class="text-base font-bold text-[#1a2049] mb-3 border-b pb-1.5 flex items-center gap-2">
+            <span>✅</span>
+            <span id="pdf-strengths-title">נקודות חוזק מרכזיות שנצפו</span>
+        </h3>
+        <table class="w-full text-right border-collapse mb-6 text-xs">
+            <thead>
+                <tr class="bg-[#1a2049] text-white">
+                    <th id="th-dim" class="p-2.5 rounded-r-lg">ממד נבחן</th>
+                    <th id="th-metric" class="p-2.5">הערכה כמותית</th>
+                    <th id="th-obs" class="p-2.5 rounded-l-lg">תצפית התנהגותית</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100" id="pdf-strengths-table"></tbody>
+        </table>
+
+        <h3 class="text-base font-bold text-red-700 mb-3 border-b border-red-200 pb-1.5 flex items-center gap-2">
+            <span>🎯</span>
+            <span id="pdf-gaps-title">פערי ביצוע: מדוע לא 100?</span>
+        </h3>
+        <table class="w-full text-right border-collapse mb-6 text-xs">
+            <thead>
+                <tr class="bg-red-900 text-white">
+                    <th id="th-gap" class="p-2.5 rounded-r-lg">נקודת תורפה שאובחנה</th>
+                    <th id="th-ded" class="p-2.5">ניכוי ציון</th>
+                    <th id="th-fix" class="p-2.5 rounded-l-lg">המלצה מעשית לתיקון ותרגול</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100" id="pdf-gaps-table"></tbody>
+        </table>
+
+        <h3 id="pdf-time-heading" class="text-base font-bold text-[#1a2049] mb-3 border-b pb-1.5">⏱️ יומן אירועים רטורי לאורך השיעור</h3>
+        <div class="space-y-2 text-xs mb-8" id="pdf-timeline-list"></div>
+
+        <div class="mt-8 pt-4 border-t border-gray-200 text-center text-[10px] text-gray-400">
+            Rhetorica AI • Pedagogical Presence & Communication Leadership Model
+        </div>
+    </div>
+
+    <!-- JavaScript Translations & Application Engine -->
+    <script>
+        let currentLang = "he";
+        let selectedAudienceText = "בוגרים ומורים";
+        let selectedGender = "male";
+        let uploadedFile = null;
+        let localStream = null;
+        let isAvatarModeOn = true;
+        let currentAnalysisResult = null;
+        let pastPdfFile = null;
+
+        const i18n = {
+            he: {
+                engineStatus: "מנוע AI מחובר",
+                audTitle: "קהל יעד לכיול אבחון המומחה:",
+                genderLabel: "פנייה בדוח:",
+                maleBtn: " מרצה (זכר)",
+                femaleBtn: " מרצה (נקבה)",
+                audElem: "כיתות ד'-ו'",
+                audMiddle: "כיתות ז'-ט'",
+                audHigh: "כיתות י'-י\"ב",
+                audAdults: "בוגרים ומורים",
+                tabUpload: " העלאת שיעור",
+                tabRecord: " תצפית חיה",
+                tabPdf: " הפקת דוח",
+                tabCompare: " מעקב התקדמות",
+                dropTitle: "גרור/י והשלך/י קובץ שיעור לכאן, או לחץ/י לבחירה",
+                dropSub: "תומך בכל פורמטי הווידאו והשמע (MP4, MP3, WAV, MOV, WebM)",
+                replaceFile: "החלף קובץ",
+                btnAnalyze: "הפעל ניתוח מומחה שפת גוף ורטוריקה 🔍",
+                recTitle: "סימולציית תצפית חיה (מצלמה + מיקרופון)",
+                recSub: "הווידאו יוקלט באיכות מותאמת וישלח ישירות לניתוח AI",
+                btnRecStart: "🔴 התחל תצפית והקלטה",
+                btnRecStop: "⏹️ סיים תצפית והפעל ניתוח AI",
+                btnRecProcessing: "⏳ מעבד ומכין לשליחה...",
+                pdfExportTitle: "ייצוא ושמירת דוח תצפית מומחה",
+                pdfExportSub: "שמרי את הדוח במחשב או שלחי אותו ישירות למייל האישי כקובץ PDF",
+                btnExportPdf: "הורד כ-PDF ",
+                emailLabel: " שלח את הדוח ישירות למייל (קובץ PDF מצורף):",
+                btnSendEmail: "שלח דוח ",
+                btnSendingEmail: "שולח PDF... ⏳",
+                emailSuccess: "✅ דוח ה-PDF נשלח בהצלחה למייל!",
+                emailFail: "❌ שגיאה בשליחת המייל. ודאי שפרטי ה-SMTP מוגדרים.",
+                cmpHeading: "מעקב התקדמות והצלבת דוחות עבר",
+                cmpSub: "העלי דוח PDF ישן שהופק ברטוריקה לצורך מדידת שיפור וזיהוי שינויים",
+                btnChoosePdf: "📁 בחרי דוח PDF קודם להשוואה",
+                noFileChosen: "לא נבחר קובץ",
+                btnRunCompare: "בצע השוואת שיפור 🔍",
+                btnComparing: "מצליב נתונים ומנתח מגמות... ⏳",
+                cmpResTitle: "✨ יעדים שנכבשו ותוקנו:",
+                cmpPerTitle: " פערי ליבה שדורשים שיפור:",
+                cmpTipTitle: "💡 דגש פדגוגי להמשך:",
+                loaderTitle: "Rhetorica AI מעבד ומנתח את הווידאו כעת...",
+                loaderSub: "מודל ה-AI צופה בווידאו, מתמלל את השמע ומנתח שפת גוף וקצב דיבור",
+                goldTitle: "תובנת המומחה המרכזית (טיפ הזהב לשיעור):",
+                avatarTitle: "אווטאר סורק שפת גוף",
+                avatarSub: "מזהה יציבה ומבודד מבוכה ויזואלית",
+                avatarOffBtn: "📴 כיבוי מצב אווטאר",
+                avatarOnBtn: "📳 הפעלת מצב אווטאר",
+                presTitle: "מדד נוכחות וחיבור פדגוגי",
+                wpmTitle: "קצב דיבור ממוצע (WPM)",
+                wpmUnit: "מילים לדקה",
+                pitchTitle: "דינמיקת קול וגיוון טון על פני מהלך השיעור",
+                pitchSub: "מדידת שינויי תדר הקול (Hz) לאורך שלבי השיעור",
+                strTitle: "נקודות חוזק מרכזיות שנצפו",
+                strBadge: "ביצוע מצטיין",
+                gapsTitle: "פערי ביצוע: נקודות לשיפור",
+                gapsSub: "ניתוח נקודות התורפה שנצפו בשיעור זה והמלצות לפעולה",
+                timelineTitle: "יומן תצפית רטורי לאורך מהלך השיעור",
+                durationLabel: "משך שיעור"
+            },
+            en: {
+                engineStatus: "AI Engine Connected",
+                audTitle: "Target Audience Calibration:",
+                genderLabel: "Report Salutation:",
+                maleBtn: " Speaker (Male)",
+                femaleBtn: " Speaker (Female)",
+                audElem: "Elementary (4th-6th)",
+                audMiddle: "Middle School (7th-9th)",
+                audHigh: "High School (10th-12th)",
+                audAdults: "Adults & Educators",
+                tabUpload: " Upload Lesson",
+                tabRecord: " Live Observation",
+                tabPdf: " Report Export",
+                tabCompare: " Progress Tracking",
+                dropTitle: "Drag & drop lesson file here, or click to browse",
+                dropSub: "Supports all video and audio formats (MP4, MP3, WAV, MOV, WebM)",
+                replaceFile: "Replace File",
+                btnAnalyze: "Run Expert Rhetoric & Body Language Analysis 🔍",
+                recTitle: "Live Classroom Simulation (Camera + Microphone)",
+                recSub: "Video is recorded in optimal lightweight stream for immediate AI analysis",
+                btnRecStart: "🔴 Start Live Observation",
+                btnRecStop: "⏹️ End Simulation & Analyze",
+                btnRecProcessing: "⏳ Processing recording...",
+                pdfExportTitle: "Export & Save Expert Observation Report",
+                pdfExportSub: "Save the report as PDF or send directly to personal email as an attachment",
+                btnExportPdf: "Download PDF 💾",
+                emailLabel: "📧 Send Report Directly to Email (Attached PDF):",
+                btnSendEmail: "Send Report ✉️",
+                btnSendingEmail: "Sending PDF... ⏳",
+                emailSuccess: "✅ PDF Report attached and sent successfully to your email!",
+                emailFail: "❌ Failed to send email. Check SMTP settings.",
+                cmpHeading: "Progress Tracking & Comparative Analysis",
+                cmpSub: "Upload a previous PDF report to measure trajectory and coaching results",
+                btnChoosePdf: "📁 Select Previous PDF Report",
+                noFileChosen: "No file selected",
+                btnRunCompare: "Run Comparison Analysis 🔍",
+                btnComparing: "Analyzing trajectory... ⏳",
+                cmpResTitle: "✨ Resolved Weaknesses:",
+                cmpPerTitle: "🎯 Core Persistent Gaps:",
+                cmpTipTitle: "💡 Key Pedagogical Focus:",
+                loaderTitle: "Rhetorica AI is analyzing the lesson...",
+                loaderSub: "AI is reviewing body language, vocal variation, and pacing",
+                goldTitle: "Expert Key Takeaway (Golden Tip):",
+                avatarTitle: "Body Language Avatar",
+                avatarSub: "Tracks posture and isolates visual artifacts",
+                avatarOffBtn: "📴 Turn Avatar Off",
+                avatarOnBtn: "📳 Turn Avatar On",
+                presTitle: "Pedagogical Presence Score",
+                wpmTitle: "Average Speaking Rate (WPM)",
+                wpmUnit: "Words / Min",
+                pitchTitle: "Vocal Dynamics & Pitch Modulation",
+                pitchSub: "Measuring vocal frequency variations (Hz) throughout the lesson",
+                strTitle: "Observed Key Strengths",
+                strBadge: "Exemplary Performance",
+                gapsTitle: "Performance Gaps: Actionable Insights",
+                gapsSub: "Identified delivery vulnerabilities and precise corrections",
+                timelineTitle: "Chronological Rhetorical Timeline",
+                durationLabel: "Duration"
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            const html = document.getElementById("htmlRoot");
+            const heBtn = document.getElementById("lang-he-btn");
+            const enBtn = document.getElementById("lang-en-btn");
+            const t = i18n[lang];
+
+            if (lang === "en") {
+                html.setAttribute("dir", "ltr");
+                html.setAttribute("lang", "en");
+                enBtn.className = "px-3 py-1 rounded-lg font-bold bg-[#00bfff] text-[#1a2049] transition shadow cursor-pointer";
+                heBtn.className = "px-3 py-1 rounded-lg font-medium text-gray-400 hover:text-white transition cursor-pointer";
+                selectedAudienceText = "Adults & Educators";
+            } else {
+                html.setAttribute("dir", "rtl");
+                html.setAttribute("lang", "he");
+                heBtn.className = "px-3 py-1 rounded-lg font-bold bg-[#00bfff] text-[#1a2049] transition shadow cursor-pointer";
+                enBtn.className = "px-3 py-1 rounded-lg font-medium text-gray-400 hover:text-white transition cursor-pointer";
+                selectedAudienceText = "בוגרים ומורים";
+            }
+
+            document.getElementById("ui-engine-status").innerText = t.engineStatus;
+            document.getElementById("ui-audience-title").innerText = t.audTitle;
+            document.getElementById("ui-gender-label").innerText = t.genderLabel;
+            document.getElementById("gender-male-btn").innerText = t.maleBtn;
+            document.getElementById("gender-female-btn").innerText = t.femaleBtn;
+
+            document.querySelector('[data-key="aud-elem"]').innerText = t.audElem;
+            document.querySelector('[data-key="aud-middle"]').innerText = t.audMiddle;
+            document.querySelector('[data-key="aud-high"]').innerText = t.audHigh;
+            document.querySelector('[data-key="aud-adults"]').innerText = t.audAdults;
+
+            document.getElementById("tab-upload-btn").innerText = t.tabUpload;
+            document.getElementById("tab-record-btn").innerText = t.tabRecord;
+            document.getElementById("tab-pdf-btn").innerText = t.tabPdf;
+            document.getElementById("tab-compare-btn").innerText = t.tabCompare;
+
+            document.getElementById("ui-drop-title").innerText = t.dropTitle;
+            document.getElementById("ui-drop-sub").innerText = t.dropSub;
+            document.getElementById("ui-replace-file").innerText = t.replaceFile;
+            document.getElementById("ui-btn-analyze").innerText = t.btnAnalyze;
+
+            document.getElementById("ui-rec-title").innerText = t.recTitle;
+            document.getElementById("ui-rec-sub").innerText = t.recSub;
+            document.getElementById("btnRecordToggle").innerHTML = `<span>${t.btnRecStart}</span>`;
+
+            document.getElementById("ui-pdf-title").innerText = t.pdfExportTitle;
+            document.getElementById("ui-pdf-sub").innerText = t.pdfExportSub;
+            document.getElementById("ui-pdf-btn").innerText = t.btnExportPdf;
+            document.getElementById("ui-email-label").innerText = t.emailLabel;
+            document.getElementById("btnSendEmail").innerText = t.btnSendEmail;
+
+            document.getElementById("ui-cmp-heading").innerText = t.cmpHeading;
+            document.getElementById("ui-cmp-sub").innerText = t.cmpSub;
+            document.getElementById("ui-btn-choose-pdf").innerText = t.btnChoosePdf;
+            document.getElementById("btnRunCompare").innerText = t.btnRunCompare;
+            document.getElementById("ui-cmp-res-title").innerHTML = `<span>✨</span> ${t.cmpResTitle}`;
+            document.getElementById("ui-cmp-per-title").innerHTML = `<span>🎯</span> ${t.cmpPerTitle}`;
+            document.getElementById("ui-cmp-tip-title").innerText = t.cmpTipTitle;
+
+            document.getElementById("loader-title").innerText = t.loaderTitle;
+            document.getElementById("loader-sub").innerText = t.loaderSub;
+            document.getElementById("ui-gold-title").innerText = t.goldTitle;
+
+            document.getElementById("ui-pres-title").innerText = t.presTitle;
+            document.getElementById("ui-wpm-title").innerText = t.wpmTitle;
+            document.getElementById("ui-wpm-unit").innerText = t.wpmUnit;
+            document.getElementById("ui-pitch-title").innerText = t.pitchTitle;
+            document.getElementById("ui-pitch-sub").innerText = t.pitchSub;
+
+            document.getElementById("strengths-title").innerText = t.strTitle;
+            document.getElementById("ui-str-badge").innerText = t.strBadge;
+            document.getElementById("gaps-title").innerText = t.gapsTitle;
+            document.getElementById("ui-gaps-sub").innerText = t.gapsSub;
+            document.getElementById("ui-timeline-title").innerText = t.timelineTitle;
+        }
+
+        function selectGender(gender) {
+            selectedGender = gender;
+            const maleBtn = document.getElementById('gender-male-btn');
+            const femaleBtn = document.getElementById('gender-female-btn');
+
+            if (gender === 'male') {
+                maleBtn.className = "px-3 py-1 rounded-lg text-xs font-bold bg-[#00bfff] text-[#1a2049] transition shadow cursor-pointer";
+                femaleBtn.className = "px-3 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition cursor-pointer";
+            } else {
+                femaleBtn.className = "px-3 py-1 rounded-lg text-xs font-bold bg-[#8a2be2] text-white transition shadow cursor-pointer";
+                maleBtn.className = "px-3 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition cursor-pointer";
+            }
+        }
+
+        function selectAudience(button) {
+            document.querySelectorAll('.audience-btn').forEach(btn => {
+                btn.className = "audience-btn p-3 rounded-xl border border-gray-700 bg-[#131735] hover:border-[#8a2be2] transition font-medium focus:outline-none cursor-pointer";
+            });
+            button.className = "audience-btn p-3 rounded-xl border border-[#8a2be2] bg-[#8a2be2]/20 shadow-lg shadow-[#8a2be2]/20 transition font-medium focus:outline-none cursor-pointer";
+            selectedAudienceText = button.innerText;
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            const targetContent = document.getElementById('tab-' + tabName);
+            if (targetContent) targetContent.classList.remove('hidden');
+
+            document.querySelectorAll('[id$="-btn"]').forEach(b => {
+                if (b.id.startsWith('tab-')) {
+                    b.className = "flex-1 py-4 text-center font-bold text-gray-500 hover:text-gray-700 transition cursor-pointer";
+                    b.style.borderColor = "transparent";
+                    b.style.color = "";
+                }
+            });
+
+            let color = tabName === 'upload' ? '#8a2be2' : (tabName === 'record' ? '#ff5733' : (tabName === 'pdf' ? '#00bfff' : '#10b981'));
+            let activeBtn = document.getElementById('tab-' + tabName + '-btn');
+            if (activeBtn) {
+                activeBtn.className = "flex-1 py-4 text-center font-bold border-b-4 transition cursor-pointer";
+                activeBtn.style.borderColor = color;
+                activeBtn.style.color = color;
+            }
+        }
+
+        function updateFileCard(file) {
+            uploadedFile = file;
+            if (uploadedFile) {
+                document.getElementById('dropZonePrompt').classList.add('hidden');
+                document.getElementById('fileSelectedCard').classList.remove('hidden');
+                document.getElementById('selectedFileName').innerText = uploadedFile.name;
+                document.getElementById('selectedFileSize').innerText = (uploadedFile.size / (1024 * 1024)).toFixed(2) + " MB";
+                document.getElementById('dropZone').classList.add('border-[#00bfff]', 'bg-blue-50/20');
+            }
+        }
+
+        function handleFileSelect(event) {
+            if (event.target.files && event.target.files[0]) updateFileCard(event.target.files[0]);
+        }
+        function handleDragOver(event) {
+            event.preventDefault();
+            document.getElementById('dropZone').classList.add('border-[#00bfff]', 'bg-blue-50/50');
+        }
+        function handleDragLeave(event) {
+            event.preventDefault();
+            document.getElementById('dropZone').classList.remove('border-[#00bfff]', 'bg-blue-50/50');
+        }
+        function handleDrop(event) {
+            event.preventDefault();
+            document.getElementById('dropZone').classList.remove('border-[#00bfff]', 'bg-blue-50/50');
+            if (event.dataTransfer.files && event.dataTransfer.files[0]) updateFileCard(event.dataTransfer.files[0]);
+        }
+
+        let liveStream = null;
+        let liveRecorder = null;
+        let liveChunks = [];
+        let liveTimerInterval = null;
+        let liveSeconds = 0;
+
+        async function toggleLiveRecording() {
+            const btn = document.getElementById("btnRecordToggle");
+            const video = document.getElementById("livePreview");
+            const placeholder = document.getElementById("cameraPlaceholder");
+            const badge = document.getElementById("recordingBadge");
+            const timerText = document.getElementById("recordTimer");
+            const t = i18n[currentLang];
+
+            if (liveRecorder && liveRecorder.state === "recording") {
+                liveRecorder.stop();
+                if (liveStream) {
+                    liveStream.getTracks().forEach(track => track.stop());
+                    liveStream = null;
+                }
+                clearInterval(liveTimerInterval);
+                badge.classList.add("hidden");
+                btn.innerHTML = `<span>${t.btnRecProcessing}</span>`;
+                btn.disabled = true;
+                return;
+            }
+
+            try {
+                liveStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: true
+                });
+
+                video.srcObject = liveStream;
+                video.classList.remove("hidden");
+                placeholder.classList.add("hidden");
+
+                liveChunks = [];
+                liveRecorder = new MediaRecorder(liveStream, { mimeType: 'video/webm;codecs=vp8,opus' });
+
+                liveRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) liveChunks.push(e.data);
+                };
+
+                liveRecorder.onstop = async () => {
+                    const blob = new Blob(liveChunks, { type: "video/webm" });
+                    const file = new File([blob], `live_${Date.now()}.webm`, { type: "video/webm" });
+
+                    btn.innerHTML = `<span>${t.btnRecStart}</span>`;
+                    btn.className = "px-8 py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition flex items-center gap-2 shadow-lg shadow-red-500/30 cursor-pointer";
+                    btn.disabled = false;
+                    video.classList.add("hidden");
+                    placeholder.classList.remove("hidden");
+
+                    updateFileCard(file);
+                    await uploadAndAnalyze();
+                };
+
+                liveRecorder.start();
+                btn.innerHTML = `<span>${t.btnRecStop}</span>`;
+                btn.className = "px-8 py-3.5 bg-gray-800 hover:bg-gray-900 text-white rounded-xl font-bold transition flex items-center gap-2 shadow-lg cursor-pointer";
+                badge.classList.remove("hidden");
+
+                liveSeconds = 0;
+                liveTimerInterval = setInterval(() => {
+                    liveSeconds++;
+                    const mins = String(Math.floor(liveSeconds / 60)).padStart(2, '0');
+                    const secs = String(liveSeconds % 60).padStart(2, '0');
+                    timerText.innerText = `${mins}:${secs}`;
+                }, 1000);
+
+            } catch (err) {
+                console.error(err);
+                alert("Camera/Mic access denied. Please grant permissions in your browser.");
+            }
+        }
+
+        function activateAvatarWebcam() {
+            if (!isAvatarModeOn) return;
+            const videoEl = document.getElementById('avatar-webcam');
+            const iconEl = document.getElementById('avatar-icon');
+
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                .then(stream => {
+                    localStream = stream;
+                    videoEl.srcObject = stream;
+                    iconEl.classList.add('hidden');
+                    videoEl.classList.remove('hidden');
+                })
+                .catch(err => console.log("Webcam preview optional: ", err));
+            }
+        }
+
+        function toggleAvatarMode() {
+            isAvatarModeOn = !isAvatarModeOn;
+            const btn = document.getElementById('avatar-toggle-btn');
+            const title = document.getElementById('avatar-status-title');
+            const desc = document.getElementById('avatar-status-desc');
+            const videoEl = document.getElementById('avatar-webcam');
+            const iconEl = document.getElementById('avatar-icon');
+            const scannerEl = document.getElementById('avatar-scanner');
+            const t = i18n[currentLang];
+
+            if (isAvatarModeOn) {
+                btn.innerHTML = t.avatarOffBtn;
+                btn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-[#8a2be2] text-white hover:bg-[#7b23cf] transition shadow-md focus:outline-none cursor-pointer";
+                title.innerText = t.avatarTitle;
+                title.className = "font-bold text-lg text-[#00bfff]";
+                desc.innerText = t.avatarSub;
+                scannerEl.classList.remove('hidden');
+
+                if (!document.getElementById('dashboard').classList.contains('hidden')) activateAvatarWebcam();
+            } else {
+                btn.innerHTML = t.avatarOnBtn;
+                btn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-gray-700 text-gray-300 hover:bg-gray-600 transition shadow-md focus:outline-none cursor-pointer";
+                title.innerText = "Avatar Mode Off";
+                title.className = "font-bold text-lg text-gray-400";
+                desc.innerText = "";
+                scannerEl.classList.add('hidden');
+
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    localStream = null;
+                }
+                videoEl.classList.add('hidden');
+                iconEl.classList.remove('hidden');
+            }
+        }
+
+        function renderDynamicResults(data) {
+            currentAnalysisResult = data;
+
+            document.getElementById('golden-tip-text').innerText = ">> " + (data.goldenTip || data.golden_tip || '');
+
+            const presenceEl = document.getElementById('stat-presence');
+            if (presenceEl) presenceEl.innerHTML = `${data.score} / 100 <span class="text-xs font-normal ${data.presenceTagClass || 'text-green-600 bg-green-50'} px-2 py-0.5 rounded-full mr-1">${data.presenceTag || 'Optimal'}</span>`;
+
+            const presenceBar = document.getElementById('stat-presence-bar');
+            if (presenceBar) presenceBar.style.width = Math.min(Math.max(data.score, 0), 100) + '%';
+
+            const wpmEl = document.getElementById('stat-wpm');
+            if (wpmEl) wpmEl.innerHTML = `${data.wpm || 140} <span class="text-sm font-normal text-gray-500">${i18n[currentLang].wpmUnit}</span>`;
+
+            const wpmBar = document.getElementById('stat-wpm-bar');
+            if (wpmBar) wpmBar.style.width = (data.wpmPercent || 75) + '%';
+
+            const pitchContainer = document.getElementById('pitch-bars-container');
+            if (pitchContainer && data.pitchBars) {
+                pitchContainer.innerHTML = '<div class="absolute left-0 right-0 top-1/2 border-t border-dashed border-gray-200 pointer-events-none z-0"></div>';
+                data.pitchBars.forEach((bar, idx) => {
+                    const isLast = idx === data.pitchBars.length - 1;
+                    const bg = isLast ? 'bg-[#00bfff] animate-pulse' : 'bg-[#8a2be2]';
+                    pitchContainer.innerHTML += `
+                        <div class="${bg} w-full h-[${bar.h}] rounded-t z-10 hover:bg-[#7b23cf] transition-all relative group cursor-pointer">
+                            <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[9px] px-1.5 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">${bar.hz}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            const strengthsTitle = document.getElementById('strengths-title');
+            if (strengthsTitle) strengthsTitle.innerText = `${i18n[currentLang].strTitle} (${data.score} pts)`;
+
+            const strengthsContainer = document.getElementById('strengths-container');
+            if (strengthsContainer && data.strengths) {
+                strengthsContainer.innerHTML = '';
+                data.strengths.forEach(s => {
+                    strengthsContainer.innerHTML += `
+                        <div class="bg-[#131735] p-4 rounded-2xl border border-gray-800 flex items-start gap-3">
+                            <span class="text-2xl p-2 bg-blue-500/10 rounded-xl">${s.icon || '✅'}</span>
+                            <div>
+                                <h5 class="font-bold text-white text-sm">${s.title}</h5>
+                                <p class="text-xs text-gray-300 mt-1 leading-relaxed">${s.desc}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            const gapPoints = (100 - parseFloat(data.score)).toFixed(1);
+            const gapsTitle = document.getElementById('gaps-title');
+            if (gapsTitle) gapsTitle.innerText = `${i18n[currentLang].gapsTitle} (-${gapPoints} pts)`;
+
+            const gapBadge = document.getElementById('gap-badge');
+            if (gapBadge) gapBadge.innerText = `-${gapPoints} pts`;
+
+            const gapsContainer = document.getElementById('gaps-container');
+            if (gapsContainer && data.gaps) {
+                gapsContainer.innerHTML = '';
+                data.gaps.forEach(g => {
+                    gapsContainer.innerHTML += `
+                        <div class="bg-[#19122c] p-4 rounded-2xl border border-red-900/30 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold text-red-400 bg-red-950/60 px-2 py-0.5 rounded border border-red-800/50">${g.points}</span>
+                                    <span class="text-base">🎯</span>
+                                </div>
+                                <h5 class="font-bold text-white text-sm">${g.title}</h5>
+                                <p class="text-xs text-gray-300 mt-1 leading-relaxed">${g.desc}</p>
+                            </div>
+                            <div class="mt-3 pt-2.5 border-t border-purple-900/40 text-[11px] text-[#00bfff]">
+                                <strong>💡 Fix:</strong> ${g.fix}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            const logDurationTag = document.getElementById('log-duration-tag');
+            if (logDurationTag) logDurationTag.innerText = `${i18n[currentLang].durationLabel}: ${data.duration || 'Full'}`;
+
+            const timelineContainer = document.getElementById('timeline-container');
+            if (timelineContainer && data.timeline) {
+                timelineContainer.innerHTML = '';
+                const borderColors = ['border-green-500', 'border-[#00bfff]', 'border-[#ff5733]', 'border-purple-500'];
+                data.timeline.forEach((item, idx) => {
+                    const bColor = borderColors[idx % borderColors.length];
+                    timelineContainer.innerHTML += `
+                        <div class="flex items-center gap-3 p-2.5 bg-gray-50 rounded-xl border-r-4 ${bColor}">
+                            <span class="font-mono font-bold text-[#1a2049] bg-white px-2 py-1 rounded shadow-sm">${item.time}</span>
+                            <span class="font-medium text-gray-700"><strong>${item.title}:</strong> ${item.desc}</span>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+       async function uploadAndAnalyze() {
+            if (!uploadedFile) {
+                alert(currentLang === 'he' ? "אנא בחר/י או הקלט/י סרטון תחילה." : "Please select or record a video first.");
+                return;
+            }
+
+            const loaderEl = document.getElementById('loader');
+            const dashboardEl = document.getElementById('dashboard');
+            const loaderTitle = document.getElementById('loader-title');
+            const loaderSub = document.getElementById('loader-sub');
+
+            if (loaderEl) loaderEl.classList.remove('hidden');
+            if (dashboardEl) dashboardEl.classList.add('hidden');
+
+            try {
+                // 1. חיווי שלב א': הכנת קישור העלאה מאובטח
+                if (loaderTitle) {
+                    loaderTitle.innerText = currentLang === 'he' ? "מכין קישור העלאה מאובטח..." : "Preparing secure upload link...";
+                }
+
+                const contentType = uploadedFile.type || "video/mp4";
+                const urlResponse = await fetch('/get-upload-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename: uploadedFile.name,
+                        content_type: contentType
+                    })
+                });
+
+                if (!urlResponse.ok) {
+                    throw new Error(currentLang === 'he' ? "נכשל בהפקת קישור העלאה מאובטח." : "Failed to obtain upload URL.");
+                }
+
+                const { upload_url, blob_name } = await urlResponse.json();
+
+                // 2. חיווי שלב ב': העלאת הקובץ ישירות ל-Google Cloud Storage
+                if (loaderTitle) {
+                    loaderTitle.innerText = currentLang === 'he' ? "מעלה את הווידאו לענן..." : "Uploading video directly to cloud...";
+                }
+                if (loaderSub) {
+                    loaderSub.innerText = currentLang === 'he' ? "הווידאו עולה ישירות למאגר האחסון (ללא מגבלת גודל)" : "Direct upload to storage bucket in progress...";
+                }
+
+                const uploadResponse = await fetch(upload_url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': contentType },
+                    body: uploadedFile
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error(currentLang === 'he' ? "העלאת הקובץ למאגר האחסון נכשלה." : "Failed to upload file to Cloud Storage.");
+                }
+
+                // 3. חיווי שלב ג': הרצת ניתוח ה-AI
+                if (loaderTitle) {
+                    loaderTitle.innerText = i18n[currentLang].loaderTitle;
+                }
+                if (loaderSub) {
+                    loaderSub.innerText = i18n[currentLang].loaderSub;
+                }
+
+                const analyzeResponse = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        blob_name: blob_name,
+                        audience: selectedAudienceText,
+                        gender: selectedGender,
+                        language: currentLang
+                    })
+                });
+
+                if (!analyzeResponse.ok) {
+                    throw new Error(currentLang === 'he' ? "שגיאה בניתוח הווידאו על ידי מודל ה-AI." : "AI analysis request failed.");
+                }
+
+                const realAiAnalysis = await analyzeResponse.json();
+
+                if (loaderEl) loaderEl.classList.add('hidden');
+                if (dashboardEl) dashboardEl.classList.remove('hidden');
+                activateAvatarWebcam();
+                renderDynamicResults(realAiAnalysis);
+
+            } catch (error) {
+                console.error(error);
+                alert(error.message || (currentLang === 'he' ? "שגיאה בניתוח הווידאו. ודאי ששרת הפייתון פועל." : "Analysis error. Ensure backend server is running."));
+                if (loaderEl) loaderEl.classList.add('hidden');
+            }
+        }
+
+        function populatePdfTemplate() {
+            const data = currentAnalysisResult;
+            if (!data) return;
+            const isEn = currentLang === 'en';
+
+            document.getElementById('pdfDate').innerText = (isEn ? 'Date: ' : 'תאריך: ') + new Date().toLocaleDateString(isEn ? 'en-US' : 'he-IL');
+            document.getElementById('pdfDuration').innerText = (isEn ? 'Duration: ' : 'משך: ') + (data.duration || '03:00');
+            document.getElementById('pdfAudience').innerText = selectedAudienceText;
+            document.getElementById('pdfSpeakerType').innerText = selectedGender === 'male' ? (isEn ? 'Speaker (Male)' : 'מרצה (זכר)') : (isEn ? 'Speaker (Female)' : 'מרצה (נקבה)');
+            document.getElementById('pdfScore').innerText = `${data.score} / 100 (${data.presenceTag || 'Optimal'})`;
+            document.getElementById('pdfGoldenTip').innerText = data.goldenTip || data.golden_tip || '';
+
+            const pdfStrengthsTable = document.getElementById('pdf-strengths-table');
+            if (pdfStrengthsTable && data.strengths) {
+                pdfStrengthsTable.innerHTML = '';
+                data.strengths.forEach(s => {
+                    pdfStrengthsTable.innerHTML += `
+                        <tr>
+                            <td class="p-3 font-bold text-gray-700">${s.title}</td>
+                            <td class="p-3 font-bold text-[#00bfff]">${s.metric || ''}</td>
+                            <td class="p-3 text-gray-600">${s.desc}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            const pdfGapsTable = document.getElementById('pdf-gaps-table');
+            if (pdfGapsTable && data.gaps) {
+                pdfGapsTable.innerHTML = '';
+                data.gaps.forEach(g => {
+                    pdfGapsTable.innerHTML += `
+                        <tr class="bg-red-50/40">
+                            <td class="p-3 font-bold text-gray-800">${g.title}</td>
+                            <td class="p-3 font-bold text-red-600">${g.points}</td>
+                            <td class="p-3 text-gray-700">${g.fix}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            const pdfTimelineList = document.getElementById('pdf-timeline-list');
+            if (pdfTimelineList && data.timeline) {
+                pdfTimelineList.innerHTML = '';
+                data.timeline.forEach(item => {
+                    pdfTimelineList.innerHTML += `
+                        <div class="p-2 bg-gray-50 rounded-lg flex items-center gap-3">
+                            <span class="font-mono font-bold text-[#1a2049] bg-white px-2 py-0.5 rounded border">${item.time}</span>
+                            <span><strong>${item.title}:</strong> ${item.desc}</span>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        async function sendReportToEmail() {
+            if (!currentAnalysisResult) {
+                alert(currentLang === 'he' ? "יש לבצע ניתוח סרטון תחילה לפני שליחת הדוח." : "Please analyze a video first.");
+                return;
+            }
+
+            const emailInput = document.getElementById("targetEmailInput");
+            const email = emailInput.value.trim();
+            const statusMsg = document.getElementById("emailStatusMsg");
+            const btn = document.getElementById("btnSendEmail");
+            const t = i18n[currentLang];
+
+            if (!email || !email.includes("@")) {
+                alert(currentLang === 'he' ? "נא להזין כתובת מייל תקינה." : "Please enter a valid email address.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = t.btnSendingEmail;
+            statusMsg.classList.add("hidden");
+
+            try {
+                populatePdfTemplate();
+                const pdfElement = document.getElementById('pdfReportTemplate');
+                pdfElement.style.display = 'block';
+
+                const opt = {
+                    margin: 10,
+                    filename: 'Rhetorica_Observation_Report.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                const pdfBlob = await html2pdf().set(opt).from(pdfElement).outputPdf('blob');
+                pdfElement.style.display = '';
+
+                const formData = new FormData();
+                formData.append("email", email);
+                formData.append("pdf_file", pdfBlob, "Rhetorica_Observation_Report.pdf");
+                formData.append("language", currentLang);
+
+                const response = await fetch("/send-email", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error("Failed to send email");
+
+                statusMsg.innerText = t.emailSuccess;
+                statusMsg.className = "text-xs mt-2 text-green-600 font-bold block";
+                emailInput.value = "";
+
+            } catch (err) {
+                console.error(err);
+                statusMsg.innerText = t.emailFail;
+                statusMsg.className = "text-xs mt-2 text-red-600 font-bold block";
+            } finally {
+                btn.disabled = false;
+                btn.innerText = t.btnSendEmail;
+            }
+        }
+
+        function handlePastPdfSelect(event) {
+            if (event.target.files && event.target.files[0]) {
+                pastPdfFile = event.target.files[0];
+                document.getElementById("selectedPastPdfName").innerText = pastPdfFile.name;
+            }
+        }
+
+        async function compareWithPastReport() {
+            if (!currentAnalysisResult) {
+                alert(currentLang === 'he' ? "נא לבצע ניתוח של שיעור נוכחי תחילה." : "Please analyze the current lesson first.");
+                return;
+            }
+            if (!pastPdfFile) {
+                alert(currentLang === 'he' ? "נא לבחור קובץ PDF של דוח עבר." : "Please select a past PDF report.");
+                return;
+            }
+
+            const btn = document.getElementById("btnRunCompare");
+            const t = i18n[currentLang];
+            btn.disabled = true;
+            btn.innerText = t.btnComparing;
+
+            const formData = new FormData();
+            formData.append("past_pdf", pastPdfFile);
+            formData.append("current_data", JSON.stringify(currentAnalysisResult));
+            formData.append("language", currentLang);
+
+            try {
+                const response = await fetch("/compare-progress", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error("Comparison failed");
+
+                const data = await response.json();
+
+                document.getElementById("cmpStatus").innerText = data.growthStatus || (currentLang === 'he' ? "ניתוח התפתחות" : "Trajectory Analysis");
+                document.getElementById("cmpDelta").innerText = `${currentLang === 'he' ? 'שינוי:' : 'Delta:'} ${data.deltaScore} pts`;
+                document.getElementById("cmpSummary").innerText = data.growthSummary || "";
+                document.getElementById("cmpCoachingTip").innerText = data.coachingTip || "";
+
+                const resolvedEl = document.getElementById("cmpResolvedList");
+                resolvedEl.innerHTML = "";
+                (data.resolvedGaps || []).forEach(item => {
+                    resolvedEl.innerHTML += `<div><strong>${item.title}:</strong> ${item.desc}</div>`;
+                });
+
+                const persistEl = document.getElementById("cmpPersistentList");
+                persistEl.innerHTML = "";
+                (data.persistentGaps || []).forEach(item => {
+                    persistEl.innerHTML += `<div><strong>${item.title}:</strong> ${item.desc}</div>`;
+                });
+
+                document.getElementById("compareResultsCard").classList.remove("hidden");
+
+            } catch (err) {
+                console.error(err);
+                alert(currentLang === 'he' ? "שגיאה בהשוואת הדוחות. ודאי שה-PDF תקין." : "Failed to compare reports. Check PDF format.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = t.btnRunCompare;
+            }
+        }
+
+        function generatePDFReport() {
+            if (!currentAnalysisResult) {
+                alert(currentLang === 'he' ? "יש לבצע ניתוח של קובץ תחילה לפני הפקת דוח PDF." : "Please run analysis before exporting PDF.");
+                return;
+            }
+            populatePdfTemplate();
+            window.print();
+        }
+    </script>
+</body>
+</html>
